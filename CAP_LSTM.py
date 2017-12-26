@@ -108,7 +108,7 @@ def procedata():
     for line in lines:
         data = line.split('\t')
         label.append([int(data[2][0])])
-        bhv = data[1].split(',')[6:-1]
+        bhv = data[1].split(',')[:-1]
         inst = np.zeros(totalseqs)
         one = np.array([float(i) for i in bhv])
         if len(one) <= totalseqs:

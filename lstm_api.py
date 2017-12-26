@@ -7,13 +7,15 @@ from keras.models import Sequential,load_model
 app = Flask(__name__)
 
 model = load_model("checkpoint/lstm.h5")
+
+
 @app.route('/predict', methods = ['GET'])
-def api_message():
+def api_predict():
 	totalseqs = 128*3
 	data = request.form['data']
-	print(data)
+	
 	points = []
-	bhv = data.split(',')[6:]
+	bhv = data.split(',')
 	inst = np.zeros(totalseqs)
 	one = np.array([float(i) for i in bhv])
 	if len(one) <= totalseqs:
@@ -23,15 +25,16 @@ def api_message():
 	    inst = one[:totalseqs]
 	    
 	inst = np.reshape(inst,[128,3])
-	points.append(inst)
-	points.append(inst)
+	
+	points=[inst]
+	
 	points = np.array(points)
-	print(points)
-	predict = model.predict(points,batch_size=1,verbose=1)
-	print(predict)
-	return predict
+	
+	result = model.predict(points,batch_size=1,verbose=1)
+	print(result)
+	return str(result[0][0])
 
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+	app.run()
