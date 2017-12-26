@@ -11,6 +11,9 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.layers import Embedding
 from keras.layers import Conv1D, GlobalAveragePooling1D, MaxPooling1D
+from sklearn.model_selection import train_test_split
+from keras.utils import plot_model
+from keras.callbacks import ModelCheckpoint
 flags = tf.app.flags
 flags.DEFINE_string("mode", "train", "run mode [train]")
 flags.DEFINE_integer("epoch", 10, "Epoch to train [10]")
@@ -21,7 +24,7 @@ flags.DEFINE_integer("batch_size", 128, "The size of batch images [64]")
 flags.DEFINE_integer("num_layers", 10, "hidden layers of lstm. [2]")
 flags.DEFINE_float("learning_rate", 0.001, "Learning rate of for adam [0.001]")
 flags.DEFINE_float("keep_prob", 0.5, "Learning rate of for adam [0.001]")
-flags.DEFINE_string("dataset", "D://captcha//data//train//train20171225.txt",
+flags.DEFINE_string("dataset", "train20171225.txt",
                     "The name of dataset [celebA, mnist, lsun]")
 flags.DEFINE_string("checkpoint_dir", "checkpoint",
                     "Directory name to save the checkpoints [checkpoint]")
@@ -33,7 +36,7 @@ FLAGS = flags.FLAGS
 
 
 
-def train(points, seqlength, targets):
+def train(points, seqlength, targets,checkpointer):
     save_every_n = 100
     model = Sequential()
     model.add(Conv1D(64, 3, activation='relu', input_shape=(FLAGS.num_steps, 3)))
@@ -51,28 +54,31 @@ def train(points, seqlength, targets):
               optimizer='rmsprop',
               metrics=['accuracy'])
 
-    x_train = points
-    y_train = targets
+    x = points
+    y = targets
 
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
     model.fit(x_train, y_train,
-          batch_size=FLAGS.batch_size, epochs=5, shuffle=True,
-          validation_data=(x_train, y_train))
+          batch_size=FLAGS.batch_size, epochs=1, shuffle=True,
+          validation_data=(x_test, y_test),callbacks=[checkpointer])
     
-    model.save(FLAGS.checkpoint_dir+"/lstm.h5")
+    model.save(FLAGS.checkpoint_dir+"/lstmsplit.h5")
 
-def trainfrombak(points, seqlength, targets):
-    model = load_model(FLAGS.checkpoint_dir+"/lstm.h5")
-    x_train = points
-    y_train = targets
+def trainfrombak(points, seqlength, targets,checkpointer):
+    model = load_model(FLAGS.checkpoint_dir+"/lstmsplit.h5")
+    x = points
+    y = targets
 
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
     model.fit(x_train, y_train,
-          batch_size=FLAGS.batch_size, epochs=5, shuffle=True,
-          validation_data=(x_train, y_train))
+          batch_size=FLAGS.batch_size, epochs=3, shuffle=True,
+          validation_data=(x_test, y_test),callbacks=[checkpointer])
+
     
-    model.save(FLAGS.checkpoint_dir+"/lstm.h5")
+    # model.save(FLAGS.checkpoint_dir+"/lstmsplit.h5")
 
 def predict(points, seqlength, targets):
-    model = load_model(FLAGS.checkpoint_dir+"/lstm.h5")
+    model = load_model(FLAGS.checkpoint_dir+"/lstmsplit.h5")
     
     x_test = points
     y_test = targets
@@ -126,14 +132,23 @@ def procedata():
     print (len(points))
     return points, pLength, label
 
-
+def plotmodel():
+    model = load_model(FLAGS.checkpoint_dir+"/lstmsplit.h5")
+    plot_model(model, to_file='model.png')
 
 if __name__ == '__main__':
+    checkpointer = ModelCheckpoint(filepath=FLAGS.checkpoint_dir+"/lstm-{epoch:02d}-{val_loss:.2f}.h5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    
     points, length, label = procedata()
     if FLAGS.mode == "train":
-        train(points, length, label)
+        
+        train(points, length, label,checkpointer)
     elif FLAGS.mode == "frombak":
-        trainfrombak(points, length, label)
+        
+        trainfrombak(points, length, label,checkpointer)
     elif FLAGS.mode == "predict":
+        
         predict(points, length, label)
+    elif FLAGS.mode == "show":
+        print("can not work now==============")
 #
