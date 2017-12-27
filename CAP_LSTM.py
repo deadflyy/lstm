@@ -134,7 +134,8 @@ def procedata():
 
 def plotmodel():
     model = load_model(FLAGS.checkpoint_dir+"/lstmsplit.h5")
-    plot_model(model, to_file='model.png')
+    print(model.summary())
+    # plot_model(model, to_file='model.png')
 
 if __name__ == '__main__':
     checkpointer = ModelCheckpoint(filepath=FLAGS.checkpoint_dir+"/lstm-{epoch:02d}-{val_loss:.2f}.h5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
@@ -151,4 +152,5 @@ if __name__ == '__main__':
         predict(points, length, label)
     elif FLAGS.mode == "show":
         print("can not work now==============")
+        plotmodel()
 #
